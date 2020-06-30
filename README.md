@@ -14,8 +14,8 @@ Beispielaufruf
    `./domainctl.py --username=benutzer --password=geheim --domain=example.com list_domains`
  * Hinzufügen eines neuen DNS Eintrages:
    `./domainctl.py --username=benutzer --password=geheim --domain=example.com --host=_acme-challenge --type=TXT --rr="01234abcde" add_record`
- * Entfernen eines betehenden DNS Eintrages:
-   `./domainctl.py --username=benutzer --password=geheim --domain=example.com --host=_acme-challenge --type=TXT --rr="01234abcde" add_record --wait`
+ * Entfernen eines betehenden DNS Eintrages und warten, dass das Update der Zone erfolgt ist:
+   `./domainctl.py --username=benutzer --password=geheim --domain=example.com --host=_acme-challenge --type=TXT --rr="01234abcde" remove_record --wait`
 
 
 Parameter
