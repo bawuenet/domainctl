@@ -127,7 +127,7 @@ def wait_for_record_add(domain, host, type, rr):
                 for j in i.items:
                     if rr in j.to_text():
                         return
-        except TypeError:
+        except (AttributeError, TypeError):
             pass
         time.sleep(30)
         print(".",)
