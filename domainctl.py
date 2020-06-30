@@ -10,13 +10,17 @@
 
 import argparse
 import requests
+import socket
 import sys
-from requests.auth import HTTPBasicAuth
+import time
+from dns.resolver import NXDOMAIN, NoAnswer, Resolver, Timeout
 from bs4 import BeautifulSoup
-from tabulate import tabulate
 from pprint import pprint
+from requests.auth import HTTPBasicAuth
+from tabulate import tabulate
 
 base_url = "https://my.bawue.net/domains.php"
+auth_ns = "ns1.bawue.net"
 username = None
 password = None
 
@@ -90,7 +94,6 @@ def add_record(domain, host, type, rr):
     if r.status_code != 200:
         raise RuntimeError("Not authorized")
 
-
 def remove_record(domain, host, type, rr):
     """ Remove a record from the DNS """
     headers, records = get_domain_records(domain)
@@ -98,10 +101,46 @@ def remove_record(domain, host, type, rr):
         r = dict(zip(headers, r))
         if '%s.%s' % (host, domain) == r['Owner'] and rr == r['Ressource Record']:
             rr_id = r['metadata']['zoneentryid']
-    params = {'Domainname': domain, 'zoneentryid': rr_id, 'action': 'domain-dns-admin-del-zone-entry' }
-    r = requests.get('%s' % base_url, auth=HTTPBasicAuth(username, password), params=params)
-    if r.status_code != 200:
-        raise RuntimeError("Not authorized")
+            params = {'Domainname': domain, 'zoneentryid': rr_id, 'action': 'domain-dns-admin-del-zone-entry' }
+            r = requests.get('%s' % base_url, auth=HTTPBasicAuth(username, password), params=params)
+            if r.status_code != 200:
+                raise RuntimeError("Not authorized")
+
+def query_dns_server(record, type):
+    resolver = Resolver(configure=False)
+    resolver.nameservers = [socket.gethostbyname(auth_ns)]
+    resolver.timeout = 5
+    resolver.lifetime = 5
+    try:
+        dns_query = resolver.query(record, type)
+        return dns_query
+    except NXDOMAIN:
+        return False
+
+
+def wait_for_record_add(domain, host, type, rr):
+    print("Waiting for DNS change...",)
+    for i in range(22):
+        answer = query_dns_server("%s.%s." % (host, domain), type)
+        try:
+            for i in answer.response.answer:
+                for j in i.items:
+                    if rr in j.to_text():
+                        return
+        except TypeError:
+            pass
+        time.sleep(30)
+        print(".",)
+    raise RuntimeError("Timeout exceeded waiting for DNS change...")
+
+def wait_for_record_remove(domain, host, type, rr):
+    print("Waiting for DNS change...",)
+    for i in range(22):
+        if not query_dns_server("%s.%s." % (host, domain), type):
+            return
+        time.sleep(30)
+        print(".",)
+    raise RuntimeError("Timeout exceeded waiting for DNS change...")
 
 def main():
     description = """Bawue.Net DNS client
@@ -116,6 +155,7 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
     parser.add_argument("--domain", type=str, help="domain")
     parser.add_argument("--type", type=str, help="type")
     parser.add_argument("--rr", type=str, help="rr")
+    parser.add_argument("--wait", action="store_true", help="wait")
 
     # Parse arguments
     args = parser.parse_args()
@@ -144,6 +184,8 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
             print("%s gehört dem Nutzer nicht" % args.domain)
             sys.exit(2)
         add_record(args.domain, args.host, args.type, args.rr)
+        if args.wait:
+            wait_for_record_add(args.domain, args.host, args.type, args.rr)
     if args.action == 'remove_record':
         for var in ('domain', 'host', 'type', 'rr'):
             if not getattr(args, var):
@@ -153,6 +195,8 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
             print("%s gehört dem Nutzer nicht" % args.domain)
             sys.exit(2)
         remove_record(args.domain, args.host, args.type, args.rr)
+        if args.wait:
+            wait_for_record_remove(args.domain, args.host, args.type, args.rr)
 
 if __name__ == "__main__":
     main()
