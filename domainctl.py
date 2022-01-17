@@ -148,7 +148,8 @@ def main():
 Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen oder zu entfernen"""
 
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument("action", type=str, help="")
+    parser.add_argument("action", type=str, help="one possible DNS action",
+        choices=['list_domains', 'list_records', 'add_record', 'remove_record'])
     parser.add_argument("--username", type=str, help="username", required=True)
     parser.add_argument("--password", type=str, help="password", required=True)
     parser.add_argument("--host", type=str, help="host")
@@ -167,7 +168,7 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
 
     if args.action == 'list_domains':
         print_domains()
-    if args.action == 'list_records':
+    elif args.action == 'list_records':
         if not args.domain:
             print("--domain muss definiert sein")
             sys.exit(1)
@@ -175,7 +176,7 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
             print("%s gehört dem Nutzer nicht" % args.domain)
             sys.exit(2)
         print_domain_records(args.domain)
-    if args.action == 'add_record':
+    elif args.action == 'add_record':
         for var in ('domain', 'host', 'type', 'rr'):
             if not getattr(args, var):
                 print("--%s muss definiert sein" % var)
@@ -186,7 +187,7 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
         add_record(args.domain, args.host, args.type, args.rr)
         if args.wait:
             wait_for_record_add(args.domain, args.host, args.type, args.rr)
-    if args.action == 'remove_record':
+    elif args.action == 'remove_record':
         for var in ('domain', 'host', 'type', 'rr'):
             if not getattr(args, var):
                 print("--%s muss definiert sein" % var)
