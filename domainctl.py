@@ -17,7 +17,6 @@ from dns.resolver import NXDOMAIN, NoAnswer, Resolver, Timeout
 from bs4 import BeautifulSoup
 from pprint import pprint
 from requests.auth import HTTPBasicAuth
-from tabulate import tabulate
 
 base_url = "https://my.bawue.net/domains.php"
 auth_ns = "ns1.bawue.net"
@@ -63,10 +62,10 @@ def get_domains():
     """ Get a list of domains """
     return sorted([x[0] for x in get_domain_data()[1]])
 
-def print_domains():
+def print_domains(output):
     """ Pretty print a table of domains owned """
     headers, data = get_domain_data()
-    print(tabulate(data, headers=headers))
+    print(output(data, headers=headers))
 
 def get_domain_records(domain):
     """ Get RRs from a domain """
@@ -82,10 +81,10 @@ def get_domain_records(domain):
         table.append(data[idx] + [metadata[idx]])
     return (headers + ['metadata'], table)
 
-def print_domain_records(domain):
+def print_domain_records(domain, output):
     """ Pretty print a table of domain contents """
     headers, data = get_domain_records(domain)
-    print(tabulate([x[:-1] for x in data], headers=headers[:-1]))
+    print(output([x[:-1] for x in data], headers=headers[:-1]))
 
 def add_record(domain, host, type, rr):
     """ Add a record to the DNS """
@@ -142,6 +141,18 @@ def wait_for_record_remove(domain, host, type, rr):
         print(".",)
     raise RuntimeError("Timeout exceeded waiting for DNS change...")
 
+def output_table(data, headers):
+    import tabulate
+    return tabulate.tabulate(data, headers=headers)
+
+def output_json(data, headers):
+    import json
+    return json.dumps([dict(zip(headers, x)) for x in data], indent=2)
+
+def output_yaml(data, headers):
+    import yaml
+    return yaml.dump([dict(zip(headers, x)) for x in data], indent=2)
+
 def main():
     description = """Bawue.Net DNS client
 
@@ -157,6 +168,8 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
     parser.add_argument("--type", type=str, help="type")
     parser.add_argument("--rr", type=str, help="rr")
     parser.add_argument("--wait", action="store_true", help="wait")
+    parser.add_argument("--format", type=str, help="output format",
+        choices=['table', 'yaml', 'json'], default='table')
 
     # Parse arguments
     args = parser.parse_args()
@@ -166,8 +179,12 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
     username = args.username
     password = args.password
 
+    # choose the right output format function
+    output = globals()['output_' + args.format]
+
+    # execute the selected action
     if args.action == 'list_domains':
-        print_domains()
+        print_domains(output)
     elif args.action == 'list_records':
         if not args.domain:
             print("--domain muss definiert sein")
@@ -175,7 +192,7 @@ Erlaubt via dem MyBawue.Net Webinterface einfach einen DNS Eintrag hinzuzufügen
         if args.domain not in get_domains():
             print("%s gehört dem Nutzer nicht" % args.domain)
             sys.exit(2)
-        print_domain_records(args.domain)
+        print_domain_records(args.domain, output)
     elif args.action == 'add_record':
         for var in ('domain', 'host', 'type', 'rr'):
             if not getattr(args, var):
