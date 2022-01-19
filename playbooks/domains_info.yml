@@ -1,0 +1,15 @@
+- name: output a list of domains
+  hosts: localhost
+  become: false
+  gather_facts: false
+
+  tasks:
+  - name: get a list of domains
+    bawuenet.domainctl.bwnet_domains_info:
+      username: "{{ bwnet_username }}"
+      password: "{{ bwnet_password }}"
+      data: "{{ bwnet_data | default(omit) }}"
+    register: __bwnet_domains_res
+  - name: output the list of domains
+    debug:
+      var: __bwnet_domains_res
