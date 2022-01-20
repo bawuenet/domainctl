@@ -65,29 +65,29 @@ def parse_html_table(table, formdata=False):
         return ([x for x in headers if len(x) > 0], data)
 
 
-def get_domain_data():
+def get_domain_data(username, password):
     """Get user owned domains"""
     r = requests.get("%s" % base_url, auth=HTTPBasicAuth(username, password))
-    if r.status_code != 200:
-        raise RuntimeError("Not authorized")
+    if not r.ok:
+        raise RuntimeError(f"Request failed due to {r.reason} ({r.status_code})")
     soup = BeautifulSoup(r.text, "html.parser")
     data = soup.find("table")
     headers, data = parse_html_table(data)
     return (headers[:-1], [x[:-1] for x in data])
 
 
-def get_domains():
+def get_domains(username, password):
     """Get a list of domains"""
-    return sorted([x[0] for x in get_domain_data()[1]])
+    return sorted([x[0] for x in get_domain_data(username, password)[1]])
 
 
-def print_domains(output):
+def print_domains(output, username, password):
     """Pretty print a table of domains owned"""
-    headers, data = get_domain_data()
+    headers, data = get_domain_data(username, password)
     print(output(data, headers=headers))
 
 
-def get_domain_records(domain):
+def get_domain_records(domain, username, password):
     """Get RRs from a domain"""
     params = {"domain": domain, "action": "edit"}
     r = requests.get(
@@ -95,6 +95,8 @@ def get_domain_records(domain):
     )
     if r.status_code != 200:
         raise RuntimeError("Not authorized")
+    if not r.ok:
+        raise RuntimeError(f"Request failed due to {r.reason} ({r.status_code})")
     soup = BeautifulSoup(r.text, "html.parser")
     data = soup.find("table")
     headers, data, metadata = parse_html_table(data, True)
@@ -104,16 +106,16 @@ def get_domain_records(domain):
     return (headers + ["metadata"], table)
 
 
-def print_domain_records(domain, output):
+def print_domain_records(domain, output, username, password):
     """Pretty print a table of domain contents"""
-    headers, data = get_domain_records(domain)
+    headers, data = get_domain_records(domain, username, password)
     print(output([x[:-1] for x in data], headers=headers[:-1]))
 
 
-def add_record(domain, host, dnstype, rr):
+def add_record(domain, host, dnstype, rr, username, password):
     """Add a record to the DNS"""
     fullhost = host + "." + domain
-    headers, records = get_domain_records(domain)
+    headers, records = get_domain_records(domain, username, password)
     # keep only the records fitting our criteria
     records = [
         y
@@ -134,16 +136,15 @@ def add_record(domain, host, dnstype, rr):
         "%s" % base_url, auth=HTTPBasicAuth(username, password), params=params
     )
     if r.status_code != 200:
-        error(f"Not authorized to add {host} to {domain} due to {r}")
-        return False
+        raise RuntimeError(f"Request failed due to {r.reason} ({r.status_code})")
     else:
         return True
 
 
-def remove_record(domain, host, dnstype, rr):
+def remove_record(domain, host, dnstype, rr, username, password):
     """Remove a record from the DNS"""
     fullhost = host + "." + domain
-    headers, records = get_domain_records(domain)
+    headers, records = get_domain_records(domain, username, password)
     # keep only the records fitting our criteria
     records = [
         y
@@ -164,8 +165,7 @@ def remove_record(domain, host, dnstype, rr):
             "%s" % base_url, auth=HTTPBasicAuth(username, password), params=params
         )
         if r.status_code != 200:
-            error(f"Not authorized to remove {host} from {domain} due to {r}")
-            return False
+            raise RuntimeError(f"Request failed due to {r.reason} ({r.status_code})")
         # we don't leave the loop so that all records with the same
         # combination are removed
     return True
@@ -183,10 +183,7 @@ def query_dns_server(record, type):
         return False
 
 
-def wait_for_record_add(domain, host, type, rr):
-    print(
-        "Waiting for DNS change...",
-    )
+def wait_for_add_record(domain, host, type, rr):
     for i in range(22):
         answer = query_dns_server("%s.%s." % (host, domain), type)
         try:
@@ -203,10 +200,7 @@ def wait_for_record_add(domain, host, type, rr):
     raise RuntimeError("Timeout exceeded waiting for DNS change...")
 
 
-def wait_for_record_remove(domain, host, type, rr):
-    print(
-        "Waiting for DNS change...",
-    )
+def wait_for_remove_record(domain, host, type, rr):
     for i in range(22):
         if not query_dns_server("%s.%s." % (host, domain), type):
             return
@@ -266,42 +260,38 @@ hinzuzufügen oder zu entfernen"""
     # Parse arguments
     args = parser.parse_args()
 
-    global username
-    global password
-    username = args.username
-    password = args.password
-
     # choose the right output format function
     output = globals()["output_" + args.format]
 
     # execute the selected action
     if args.action == "list_domains":
-        print_domains(output)
+        print_domains(output, args.username, args.password)
     elif args.action == "list_records":
-        if not args.domain:
-            error("--domain muss definiert sein")
-            sys.exit(1)
-        if args.domain not in get_domains():
+        if args.domain not in get_domains(args.username, args.password):
             error("%s gehört dem Nutzer nicht" % args.domain)
             sys.exit(2)
-        print_domain_records(args.domain, output)
+        print_domain_records(args.domain, output, args.username, args.password)
     elif args.action == "add_record" or args.action == "remove_record":
         for var in ("domain", "host", "type", "rr"):
             if not getattr(args, var):
                 error("--%s muss definiert sein" % var)
                 sys.exit(1)
-        if args.domain not in get_domains():
+        if args.domain not in get_domains(args.username, args.password):
             error("%s gehört dem Nutzer nicht" % args.domain)
             sys.exit(2)
         # call the action function by its name
-        ret = globals()[args.action](args.domain, args.host, args.type, args.rr)
-        if ret:  # action was successful
-            if args.wait:
-                wait_for_record_add(args.domain, args.host, args.type, args.rr)
-        elif ret is None:
-            sys.exit(-1)  # nothing modified
-        else:  # error
-            sys.exit(3)
+        ret = globals()[args.action](
+            args.domain, args.host, args.type, args.rr, args.username, args.password
+        )
+        if ret is None:  # nothing modified
+            sys.exit(-1)
+        if args.wait:
+            print(
+                "Waiting for DNS change...",
+            )
+            globals()["wait_for_" + args.action](
+                args.domain, args.host, args.type, args.rr
+            )
 
 
 if __name__ == "__main__":

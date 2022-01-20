@@ -1,0 +1,36 @@
+- name: add a DNS record to a domain
+  hosts: localhost
+  become: false
+  gather_facts: false
+
+  tasks:
+  - name: get information about records in given domain
+    bawuenet.domainctl.bwnet_records_info:
+      username: "{{ bwnet_username }}"
+      password: "{{ bwnet_password }}"
+      domain: "{{ bwnet_domain }}"
+    register: __bwnet_records_res
+  - name: output the lists of records
+    debug:
+      var: __bwnet_records_res
+
+  - name: add/remove record to/from domain
+    bawuenet.domainctl.bwnet_record:
+      username: "{{ bwnet_username }}"
+      password: "{{ bwnet_password }}"
+      domain: "{{ bwnet_domain }}"
+      host: "{{ bwnet_host }}"
+      type: "{{ bwnet_type }}"
+      rr: "{{ bwnet_rr }}"
+      state: "{{ bwnet_state | default(omit) }}"
+      wait: "{{ bwnet_wait | default(omit) }}"
+
+  - name: get information about records in given domain
+    bawuenet.domainctl.bwnet_records_info:
+      username: "{{ bwnet_username }}"
+      password: "{{ bwnet_password }}"
+      domain: "{{ bwnet_domain }}"
+    register: __bwnet_records_res
+  - name: output the lists of records
+    debug:
+      var: __bwnet_records_res

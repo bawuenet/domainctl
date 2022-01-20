@@ -28,3 +28,26 @@ Parameter
  * --type _RR Type_: A, AAAA, MX, CNAME, TXT, SRV
  * --rr _Resource Record_
  * --wait _Auf den Abschluss der DNS Operation warten und erst beenden, wenn der DNS Eintrag erreichbar ist._
+
+Ansible
+-------
+
+Dieses Git-Repository kann auch als Ansible Collection benutzt werden:
+
+```
+mkdir -p ~.ansible/collections/ansible_collections/bawuenet
+cd ~.ansible/collections/ansible_collections/bawuenet
+git clone https://github.com/bawuenet/domainctl.git
+# oder
+git clone git@github.com:bawuenet/domainctl.git
+cd
+ansible-doc bawuenet.domainctl.bwnet_domains_info
+```
+
+Diese Collection `bawuenet.domainctl` definiert die Modulen:
+
+* `bwnet_domains_info`, um Domänen eines bestimmten Benutzers aufzulisten
+* `bwnet_records_info`, um Records in einer Domäne aufzulisten
+* `bwnet_record`, um ein Record aus einer Domäne zu löschen oder hinzuzufügen
+
+Es sind auch zwei Playbooks vorhanden, um die Benutzung zu erläutern.

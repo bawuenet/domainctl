@@ -8,13 +8,13 @@ from ..module_utils import domainctl
 
 DOCUMENTATION = r'''
 ---
-module: bwnet_domains_info
+module: bwnet_records_info
 
-short_description: get a list of domains owned by given user
+short_description: get a list of records for a given domain
 
 version_added: "1.0.0"
 
-description: returns a list of DNS domains owned by given user
+description: returns a list of DNS records pertaining to a domain
 
 options:
     username:
@@ -25,50 +25,41 @@ options:
         description: password of the user
         required: true
         type: str
-    data:
-        description: gather more data about domains
-        required: false
-        type: bool
-        default: false
+    domain:
+        description: name of the domain for which records are to be shown
+        required: true
+        type: str
 author:
     - Eric Lavarde (@ericzolf)
 '''
 
 EXAMPLES = r'''
-# get list of domains
-- name: list John Doe's owned domains
-  bawunet.domainctl.bwnet_domains_info:
+# get list of records
+- name: list John Doe's owned records
+  bawunet.domainctl.bwnet_records_info:
     username: johndoe
     password: secret
-  register: __domains_list
+    domain: example.com
+  register: __records_list
 '''
 
 RETURN = r'''
-domains:
-    description: list of DNS domains owned by given user
+records:
+    description: list of DNS records
     type: list
     returned: always
-    sample:
-        - example.de
-        - example.eu
-domains_data:
-    description: data about the listed domains
-    type: list
-    returned: optional
     sample: [
             {
-                "Dienstname": ".de Domainhosting",
-                "Domain-Typ": "Automatischer Standard",
-                "Domainname": "example.de",
-                "Mailserver": "Spamfilter",
-                "Webserver": "virtweb02.bawue.net"
-            },
-            {
-                "Dienstname": ".eu Domainhosting",
-                "Domain-Typ": "Automatischer Standard",
-                "Domainname": "example.eu",
-                "Mailserver": "Spamfilter",
-                "Webserver": "virtweb02.bawue.net"
+                "Class": "IN",
+                "Owner": "test.example.com",
+                "Ressource Record": "192.2.0.1",
+                "Type": "A",
+                "metadata": {
+                    "Domainname": "example.com",
+                    "action": "domain-dns-admin-del-zone-entry",
+                    "null": "Eintrag löschen",
+                    "zoneentryid": "1234"
+                }
             }
         ]
 '''
@@ -81,7 +72,7 @@ def run_module():
     module_args = dict(
         username=dict(type='str', required=True),
         password=dict(type='str', required=True, no_log=True),
-        data=dict(type='bool', required=False),
+        domain=dict(type='str', required=True),
     )
 
     # seed the result dict in the object
@@ -91,8 +82,7 @@ def run_module():
     # for consumption, for example, in a subsequent task
     result = dict(
         changed=False,
-        domains=[],
-        domains_data=[],
+        records=[],
     )
 
     # the AnsibleModule object will be our abstraction working with Ansible
@@ -107,12 +97,14 @@ def run_module():
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
     try:
-        result['domains'] = domainctl.get_domains(
-                module.params['username'], module.params['password'])
-        if module.params['data']:
-            headers, data = domainctl.get_domain_data(
-                module.params['username'], module.params['password'])
-            result['domains_data'] = [dict(zip(headers, x)) for x in data]
+        domains = domainctl.get_domains(module.params['username'],
+                                        module.params['password'])
+        domain = module.params['domain']
+        if domain not in domains:
+            module.fail_json(f'Domain {domain} does not belong to user')
+        headers, data = domainctl.get_domain_records(
+            domain, module.params['username'], module.params['password'])
+        result['records'] = [dict(zip(headers, x)) for x in data]
     except RuntimeError as exc:
         module.fail_json(exc.args[0])
 
