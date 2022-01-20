@@ -106,12 +106,15 @@ def run_module():
 
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
-    result['domains'] = domainctl.get_domains(
-            module.params['username'], module.params['password'])
-    if module.params['data']:
-        headers, data = domainctl.get_domain_data(
-            module.params['username'], module.params['password'])
-        result['domains_data'] = [dict(zip(headers, x)) for x in data]
+    try:
+        result['domains'] = domainctl.get_domains(
+                module.params['username'], module.params['password'])
+        if module.params['data']:
+            headers, data = domainctl.get_domain_data(
+                module.params['username'], module.params['password'])
+            result['domains_data'] = [dict(zip(headers, x)) for x in data]
+    except RuntimeError as exc:
+        module.fail_json(exc.args[0])
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results

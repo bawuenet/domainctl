@@ -63,8 +63,9 @@ def parse_html_table(table, formdata=False):
 def get_domain_data(username, password):
     """ Get user owned domains """
     r = requests.get('%s' % base_url, auth=HTTPBasicAuth(username, password))
-    if r.status_code != 200:
-        raise RuntimeError("Not authorized")
+    if not r.ok:
+        raise RuntimeError(
+            f"Request failed due to {r.reason} ({r.status_code})")
     soup = BeautifulSoup(r.text, 'html.parser')
     data = soup.find('table')
     headers, data = parse_html_table(data)
@@ -87,8 +88,9 @@ def get_domain_records(domain):
     params = {'domain': domain, 'action': 'edit'}
     r = requests.get('%s' % base_url, auth=HTTPBasicAuth(username, password),
                      params=params)
-    if r.status_code != 200:
-        raise RuntimeError("Not authorized")
+    if not r.ok:
+        raise RuntimeError(
+            f"Request failed due to {r.reason} ({r.status_code})")
     soup = BeautifulSoup(r.text, 'html.parser')
     data = soup.find('table')
     headers, data, metadata = parse_html_table(data, True)
