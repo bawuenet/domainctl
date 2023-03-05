@@ -13,7 +13,7 @@ import requests
 import socket
 import sys
 import time
-from dns.resolver import NXDOMAIN, Resolver
+from dns.resolver import NXDOMAIN, Resolver, LifetimeTimeout
 from bs4 import BeautifulSoup
 from requests.auth import HTTPBasicAuth
 
@@ -177,7 +177,7 @@ def query_dns_server(record, type):
     try:
         dns_query = resolver.resolve(record, type)
         return dns_query
-    except NXDOMAIN:
+    except (NXDOMAIN, LifetimeTimeout):
         return False
 
 
@@ -188,24 +188,26 @@ def wait_for_add_record(domain, host, type, rr):
             for i in answer.response.answer:
                 for j in i.items:
                     if rr in j.to_text():
+                        sys.stdout.write("\n")
+                        sys.stdout.flush()
                         return
         except (AttributeError, TypeError):
             pass
         time.sleep(30)
-        print(
-            ".",
-        )
+        sys.stdout.write(".")
+        sys.stdout.flush()
     raise RuntimeError("Timeout exceeded waiting for DNS change...")
 
 
 def wait_for_remove_record(domain, host, type, rr):
     for i in range(22):
         if not query_dns_server("%s.%s." % (host, domain), type):
+            sys.stdout.write("\n")
+            sys.stdout.flush()
             return
         time.sleep(30)
-        print(
-            ".",
-        )
+        sys.stdout.write(".")
+        sys.stdout.flush()
     raise RuntimeError("Timeout exceeded waiting for DNS change...")
 
 
@@ -257,7 +259,6 @@ hinzuzufügen oder zu entfernen"""
 
     # Parse arguments
     args = parser.parse_args()
-
     # choose the right output format function
     output = globals()["output_" + args.format]
 
