@@ -58,7 +58,7 @@ def parse_html_table(table, formdata=False):
             )
         else:
             metadata.append({})
-        data.append([x.text for x in row.find_all("td") if len(x.text) > 0])
+        data.append([x.text.strip() for x in row.find_all("td") if len(x.text) > 0])
     if formdata:
         return ([x for x in headers if len(x) > 0], data, metadata)
     else:
