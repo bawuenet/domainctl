@@ -2,11 +2,12 @@
 
 # Copyright: (c) 2020, Eric Lavarde <ewl+bawue@lavar.de>
 # License: MIT
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 from ..module_utils import domainctl
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: bwnet_domains_info
 
@@ -32,18 +33,18 @@ options:
         default: false
 author:
     - Eric Lavarde (@ericzolf)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 # get list of domains
 - name: list John Doe's owned domains
   bawunet.domainctl.bwnet_domains_info:
     username: johndoe
     password: secret
   register: __domains_list
-'''
+"""
 
-RETURN = r'''
+RETURN = r"""
 domains:
     description: list of DNS domains owned by given user
     type: list
@@ -71,7 +72,7 @@ domains_data:
                 "Webserver": "virtweb02.bawue.net"
             }
         ]
-'''
+"""
 
 from ansible.module_utils.basic import AnsibleModule  # noqa: E402
 
@@ -79,9 +80,9 @@ from ansible.module_utils.basic import AnsibleModule  # noqa: E402
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
-        username=dict(type='str', required=True),
-        password=dict(type='str', required=True, no_log=True),
-        data=dict(type='bool', required=False),
+        username=dict(type="str", required=True),
+        password=dict(type="str", required=True, no_log=True),
+        data=dict(type="bool", required=False),
     )
 
     # seed the result dict in the object
@@ -99,20 +100,19 @@ def run_module():
     # this includes instantiation, a couple of common attr would be the
     # args/params passed to the execution, as well as if the module
     # supports check mode
-    module = AnsibleModule(
-        argument_spec=module_args,
-        supports_check_mode=True
-    )
+    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
     try:
-        result['domains'] = domainctl.get_domains(
-                module.params['username'], module.params['password'])
-        if module.params['data']:
+        result["domains"] = domainctl.get_domains(
+            module.params["username"], module.params["password"]
+        )
+        if module.params["data"]:
             headers, data = domainctl.get_domain_data(
-                module.params['username'], module.params['password'])
-            result['domains_data'] = [dict(zip(headers, x)) for x in data]
+                module.params["username"], module.params["password"]
+            )
+            result["domains_data"] = [dict(zip(headers, x)) for x in data]
     except RuntimeError as exc:
         module.fail_json(exc.args[0])
 
@@ -125,5 +125,5 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

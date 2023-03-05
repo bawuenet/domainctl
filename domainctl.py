@@ -93,8 +93,6 @@ def get_domain_records(domain, username, password):
     r = requests.get(
         "%s" % base_url, auth=HTTPBasicAuth(username, password), params=params
     )
-    if r.status_code != 200:
-        raise RuntimeError("Not authorized")
     if not r.ok:
         raise RuntimeError(f"Request failed due to {r.reason} ({r.status_code})")
     soup = BeautifulSoup(r.text, "html.parser")
@@ -267,6 +265,9 @@ hinzuzufügen oder zu entfernen"""
     if args.action == "list_domains":
         print_domains(output, args.username, args.password)
     elif args.action == "list_records":
+        if not args.domain:
+            error("--domain muss definiert sein")
+            sys.exit(1)
         if args.domain not in get_domains(args.username, args.password):
             error("%s gehört dem Nutzer nicht" % args.domain)
             sys.exit(2)

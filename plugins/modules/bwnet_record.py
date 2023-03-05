@@ -2,11 +2,12 @@
 
 # Copyright: (c) 2020, Eric Lavarde <ewl+bawue@lavar.de>
 # License: MIT
-from __future__ import (absolute_import, division, print_function)
+from __future__ import absolute_import, division, print_function
+
 __metaclass__ = type
 from ..module_utils import domainctl
 
-DOCUMENTATION = r'''
+DOCUMENTATION = r"""
 ---
 module: bwnet_record
 
@@ -57,9 +58,9 @@ options:
 
 author:
     - Eric Lavarde (@ericzolf)
-'''
+"""
 
-EXAMPLES = r'''
+EXAMPLES = r"""
 # add a record
 - name: add John Doe's test server to his domain
   bawunet.domainctl.bwnet_record:
@@ -71,10 +72,10 @@ EXAMPLES = r'''
     rr: 192.0.2.1
     state: present
     wait: true
-'''
+"""
 
-RETURN = r'''
-'''
+RETURN = r"""
+"""
 
 from ansible.module_utils.basic import AnsibleModule  # noqa: E402
 
@@ -82,15 +83,16 @@ from ansible.module_utils.basic import AnsibleModule  # noqa: E402
 def run_module():
     # define available arguments/parameters a user can pass to the module
     module_args = dict(
-        username=dict(type='str', required=True),
-        password=dict(type='str', required=True, no_log=True),
-        domain=dict(type='str', required=True),
-        host=dict(type='str', required=True),
-        rr=dict(type='str', required=True),
-        type=dict(type='str', required=True),
-        state=dict(type='str', required=False,
-                   default='present', choices=['absent', 'present']),
-        wait=dict(type='bool', required=False, default=False),
+        username=dict(type="str", required=True),
+        password=dict(type="str", required=True, no_log=True),
+        domain=dict(type="str", required=True),
+        host=dict(type="str", required=True),
+        rr=dict(type="str", required=True),
+        type=dict(type="str", required=True),
+        state=dict(
+            type="str", required=False, default="present", choices=["absent", "present"]
+        ),
+        wait=dict(type="bool", required=False, default=False),
     )
 
     # seed the result dict in the object
@@ -106,45 +108,57 @@ def run_module():
     # this includes instantiation, a couple of common attr would be the
     # args/params passed to the execution, as well as if the module
     # supports check mode
-    module = AnsibleModule(
-        argument_spec=module_args,
-        supports_check_mode=True
-    )
+    module = AnsibleModule(argument_spec=module_args, supports_check_mode=True)
 
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
     try:
-        domains = domainctl.get_domains(module.params['username'],
-                                        module.params['password'])
-        domain = module.params['domain']
+        domains = domainctl.get_domains(
+            module.params["username"], module.params["password"]
+        )
+        domain = module.params["domain"]
         if domain not in domains:
-            module.fail_json(f'Domain {domain} does not belong to user')
-        if module.params['state'] == 'present':
+            module.fail_json(f"Domain {domain} does not belong to user")
+        if module.params["state"] == "present":
             ret = domainctl.add_record(
-                domain, module.params['host'],
-                module.params['type'], module.params['rr'],
-                module.params['username'], module.params['password'])
+                domain,
+                module.params["host"],
+                module.params["type"],
+                module.params["rr"],
+                module.params["username"],
+                module.params["password"],
+            )
         else:
             ret = domainctl.remove_record(
-                domain, module.params['host'],
-                module.params['type'], module.params['rr'],
-                module.params['username'], module.params['password'])
+                domain,
+                module.params["host"],
+                module.params["type"],
+                module.params["rr"],
+                module.params["username"],
+                module.params["password"],
+            )
     except RuntimeError as exc:
         module.fail_json(exc.args[0])
 
     if ret is None:
         # nothing changed
         module.exit_json(**result)
-    result['changed'] = True
-    if module.params['wait']:
-        if module.params['state'] == 'present':
+    result["changed"] = True
+    if module.params["wait"]:
+        if module.params["state"] == "present":
             domainctl.wait_for_add_record(
-                domain, module.params['host'],
-                module.params['type'], module.params['rr'])
+                domain,
+                module.params["host"],
+                module.params["type"],
+                module.params["rr"],
+            )
         else:
             domainctl.wait_for_remove_record(
-                domain, module.params['host'],
-                module.params['type'], module.params['rr'])
+                domain,
+                module.params["host"],
+                module.params["type"],
+                module.params["rr"],
+            )
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
     module.exit_json(**result)
@@ -154,5 +168,5 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
