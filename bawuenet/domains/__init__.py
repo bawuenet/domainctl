@@ -145,7 +145,7 @@ class DomainsAPI:
             # combination are removed
         return True
 
-    def query_dns_server(record, type):
+    def query_dns_server(self, record, type):
         resolver = Resolver(configure=False)
         resolver.nameservers = [socket.gethostbyname(auth_ns)]
         resolver.timeout = 5
@@ -156,9 +156,9 @@ class DomainsAPI:
         except (NXDOMAIN, LifetimeTimeout):
             return False
 
-    def wait_for_add_record(domain, host, type, rr):
+    def wait_for_add_record(self, domain, host, type, rr):
         for i in range(22):
-            answer = query_dns_server("%s.%s." % (host, domain), type)
+            answer = self.query_dns_server("%s.%s." % (host, domain), type)
             try:
                 for i in answer.response.answer:
                     for j in i.items:
@@ -173,9 +173,9 @@ class DomainsAPI:
             sys.stdout.flush()
         raise RuntimeError("Timeout exceeded waiting for DNS change...")
 
-    def wait_for_remove_record(domain, host, type, rr):
+    def wait_for_remove_record(self, domain, host, type, rr):
         for i in range(22):
-            if not query_dns_server("%s.%s." % (host, domain), type):
+            if not self.query_dns_server("%s.%s." % (host, domain), type):
                 sys.stdout.write("\n")
                 sys.stdout.flush()
                 return
