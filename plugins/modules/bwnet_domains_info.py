@@ -5,7 +5,7 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
-from ..module_utils import domainctl
+from bawuenet.domains import DomainsAPI
 
 DOCUMENTATION = r"""
 ---
@@ -105,13 +105,10 @@ def run_module():
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
     try:
-        result["domains"] = domainctl.get_domains(
-            module.params["username"], module.params["password"]
-        )
+        domainctl = DomainsAPI(module.params["username"], module.params["password"])
+        result["domains"] = domainctl.get_domains()
         if module.params["data"]:
-            headers, data = domainctl.get_domain_data(
-                module.params["username"], module.params["password"]
-            )
+            headers, data = domainctl.get_domain_data()
             result["domains_data"] = [dict(zip(headers, x)) for x in data]
     except RuntimeError as exc:
         module.fail_json(exc.args[0])
@@ -126,4 +123,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # To allow for testing during development:
+    # echo '{"ANSIBLE_MODULE_ARGS": {"username": "user", "password": "secret"}}'  | python3 plugins/modules/bwnet_domains_info.py
     main()

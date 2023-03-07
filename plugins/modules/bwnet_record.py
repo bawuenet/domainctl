@@ -5,7 +5,7 @@
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
-from ..module_utils import domainctl
+from bawuenet.domains import DomainsAPI
 
 DOCUMENTATION = r"""
 ---
@@ -113,9 +113,8 @@ def run_module():
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
     try:
-        domains = domainctl.get_domains(
-            module.params["username"], module.params["password"]
-        )
+        domainctl = DomainsAPI(module.params["username"], module.params["password"])
+        domains = domainctl.get_domains()
         domain = module.params["domain"]
         if domain not in domains:
             module.fail_json(f"Domain {domain} does not belong to user")
@@ -125,8 +124,6 @@ def run_module():
                 module.params["host"],
                 module.params["type"],
                 module.params["rr"],
-                module.params["username"],
-                module.params["password"],
             )
         else:
             ret = domainctl.remove_record(
@@ -134,8 +131,6 @@ def run_module():
                 module.params["host"],
                 module.params["type"],
                 module.params["rr"],
-                module.params["username"],
-                module.params["password"],
             )
     except RuntimeError as exc:
         module.fail_json(exc.args[0])
