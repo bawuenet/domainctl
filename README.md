@@ -4,6 +4,13 @@ Bawue.Net DNS API client
 Dieser Client erlaubt es, seine beim [Bawue.Net](https://www.bawue.net/) gehosteten Domains von der Kommandozeile aus zu administrieren.
 Somit kann auf einfache Weite ein Let'sEncrypt Zertifikat mit der DNS-01 Challenge erzeugt werden.
 
+Installation
+------------
+
+Am einfachsten direkt mit PIP:
+
+`pip install 'git+https://github.com/bawuenet/domainctl'`
+
 
 Beispielaufruf
 --------------
