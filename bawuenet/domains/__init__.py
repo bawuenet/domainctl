@@ -147,7 +147,7 @@ class DomainsAPI:
 
     def query_dns_server(self, record, type):
         resolver = Resolver(configure=False)
-        resolver.nameservers = [socket.gethostbyname(auth_ns)]
+        resolver.nameservers = [socket.gethostbyname(self.auth_ns)]
         resolver.timeout = 5
         resolver.lifetime = 5
         try:
