@@ -49,6 +49,14 @@ username=benutzer
 password=geheim
 ```
 
+Hinweise
+--------
+
+| Record Type | Hinweise |
+| ----------- | ---------|
+| TXT Records | * Diese sollten normalerweise von doppelten Anführungszeichen (`"`) umschlossen sein. |
+|             | * An der Kommandozeile am besten als `'"Dies ist ein Text"'` in einfachen Anführungszeichen (`'`) umschliessen. |
+
 Ansible
 -------
 
