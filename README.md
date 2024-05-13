@@ -1,4 +1,4 @@
-Bawue.Net DNS API client
+eBawue.Net DNS API client
 ========================
 
 Dieser Client erlaubt es, seine beim [Bawue.Net](https://www.bawue.net/) gehosteten Domains von der Kommandozeile aus zu administrieren.
@@ -52,10 +52,9 @@ password=geheim
 Hinweise
 --------
 
-| Record Type | Hinweise |
-| ----------- | ---------|
-| TXT Records | * Diese sollten normalerweise von doppelten Anführungszeichen (`"`) umschlossen sein. |
-|             | * An der Kommandozeile am besten als `'"Dies ist ein Text"'` in einfachen Anführungszeichen (`'`) umschliessen. |
+ * TXT Records
+   * Diese sollten normalerweise von doppelten Anführungszeichen (`"`) umschlossen sein.
+   * An der Kommandozeile am besten als `'"Dies ist ein Text"'` in einfachen Anführungszeichen (`'`) umschliessen.
 
 Ansible
 -------
