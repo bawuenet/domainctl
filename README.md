@@ -28,13 +28,26 @@ Beispielaufruf
 Parameter
 ---------
 
- * --username
- * --password
+ * Username und Passwort entweder:
+   * --credentials als Datei mit den Zugangsdaten
+   * --username und --password
  * --domain _Domainname_
  * --host _Hostname oder Subdomainname_
  * --type _RR Type_: A, AAAA, MX, CNAME, TXT, SRV
  * --rr _Resource Record_
  * --wait _Auf den Abschluss der DNS Operation warten und erst beenden, wenn der DNS Eintrag erreichbar ist._
+
+Credential File
+---------------
+
+Eine `.ini` Datei, die den Usernamen und das Passwort enthält, damit dieses nicht als Kommandozeilen-
+Parameter übergeben werden muss:
+
+```INI
+[bawue]
+username=benutzer
+password=geheim
+```
 
 Ansible
 -------

@@ -9,11 +9,14 @@
 #
 
 import argparse
-from bawuenet.domains import DomainsAPI
+import configparser
 import sys
+from bawuenet.domains import DomainsAPI
+
 
 def error(msg):
     sys.stderr.write("ERROR:   " + msg + "\n")
+
 
 def warn(msg):
     sys.stderr.write("WARNING: " + msg + "\n")
@@ -62,8 +65,11 @@ hinzuzufügen oder zu entfernen"""
         help="one possible DNS action",
         choices=["list_domains", "list_records", "add_record", "remove_record"],
     )
-    parser.add_argument("--username", type=str, help="username", required=True)
-    parser.add_argument("--password", type=str, help="password", required=True)
+    parser.add_argument(
+        "--credentials", type=str, help="credentials file", required=False
+    )
+    parser.add_argument("--username", type=str, help="username", required=False)
+    parser.add_argument("--password", type=str, help="password", required=False)
     parser.add_argument("--host", type=str, help="host name (without domain)")
     parser.add_argument("--domain", type=str, help="domain")
     parser.add_argument("--type", type=str, help="type")
@@ -81,6 +87,18 @@ hinzuzufügen oder zu entfernen"""
     args = parser.parse_args()
     # choose the right output format function
     output = globals()["output_" + args.format]
+
+    if not (args.credentials or (args.username and args.password)):
+        error(
+            "Entweder --credentials oder --username und --passwort müssen definiert sein."
+        )
+        sys.exit(255)
+    elif args.credentials:
+        config = configparser.ConfigParser()
+        config.read(args.credentials)
+        section = config.sections()[0]
+        args.username = config[section]["username"]
+        args.password = config[section]["password"]
 
     domain_api = DomainsAPI(args.username, args.password)
 
